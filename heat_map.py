@@ -4,14 +4,13 @@ import matplotlib.pyplot as plt
 from mplsoccer import Pitch
 from statsbombpy import sb
 
-def convert_to_heatmap(df, x_col, y_col, endX_col, endY_col, bins=(30, 20), cmap='Reds'):
+def convert_to_heatmap(df, x_col, y_col, endX_col, endY_col, bins=(60, 40), cmap='Reds'):
     fig, ax = plt.subplots(figsize=(13.5, 8))
     fig.set_facecolor('#22312b')
     ax.patch.set_facecolor('#22312b')
     
-    # Keeping the pitch style consistent with your previous request
     pitch = Pitch(pitch_type='statsbomb', 
-                  pitch_color='#22312b', line_color='#c7d5cc')
+                  pitch_color = 'grass', line_color='#c7d5cc')
 
     x = df[x_col]
     y = df[y_col]
@@ -52,18 +51,15 @@ def load_player_events(player_name, season_id):
     
     player_events = events[(events['player'] == player_name) & (events['type'].isin(touch_types))].copy()
 
-    # Get start coordinates
     player_events = player_events.dropna(subset=['location'])
     player_events['x'] = player_events['location'].str[0]
     player_events['y'] = player_events['location'].str[1]
 
-    # Handle end coordinates for both Passes and Carries
-    # We combine them into single endX/endY columns
+
     player_events['endX'] = player_events['pass_end_location'].str[0].fillna(player_events['carry_end_location'].str[0])
     player_events['endY'] = player_events['pass_end_location'].str[1].fillna(player_events['carry_end_location'].str[1])
     
     # Normalize outcomes for coloring
-    # In StatsBomb, a NaN pass_outcome or carry_outcome usually means success
     player_events['outcome'] = 'Successful'
     if 'pass_outcome' in player_events.columns:
         player_events.loc[player_events['pass_outcome'].notnull(), 'outcome'] = 'Unsuccessful'
