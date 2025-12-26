@@ -39,11 +39,8 @@ def convert_to_heatmap(df, x_col, y_col, endX_col, endY_col, bins=(60, 40), cmap
     plt.title('Florian Wirtz Touch & Pass Map', color='white', size=20)
     plt.show()
 
-def load_player_events(player_name, season_id):
-    matches = sb.matches(competition_id=9, season_id=season_id)
-    team_name = "Bayer Leverkusen"
-    player_matches = matches[(matches['home_team'] == team_name) | (matches['away_team'] == team_name)]
-    match_id = player_matches.iloc[0]['match_id']
+def load_player_events(player_name, match_id):
+
     events = sb.events(match_id=match_id)
 
     # Define Touch types
@@ -69,4 +66,4 @@ def load_player_events(player_name, season_id):
     convert_to_heatmap(player_events, 'x', 'y', 'endX', 'endY')
 
 if __name__ == "__main__":
-    load_player_events(player_name="Florian Wirtz", season_id=281)
+    load_player_events(player_name="Florian Wirtz", match_id=3895182)
