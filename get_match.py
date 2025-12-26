@@ -13,6 +13,5 @@ if __name__ == "__main__":
     competition_id = 9  # Bundesliga
     season_id = 281      # 2023/2024 Season
     team_name = "Bayer Leverkusen"
-    
     matches = get_matches(competition_id, season_id, team_name)
     print(matches[['home_team', 'away_team', 'match_id']])

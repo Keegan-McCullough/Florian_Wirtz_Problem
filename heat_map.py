@@ -18,18 +18,17 @@ def convert_to_heatmap(df, x_col, y_col, endX_col, endY_col, bins=(60, 40), cmap
     pitch.draw(ax=ax)
     plt.gca().invert_yaxis()
     
-    # Heatmap based on all touch locations
-    heatmap = pitch.bin_statistic(x, y, statistic='count', bins=bins)
-    pitch.heatmap(heatmap, ax=ax, cmap=cmap, alpha=0.5)
+    # KDE plot heatmap based on all touch locations
+    sns.kdeplot(x=x, y=y, ax=ax, cmap=cmap, fill=True, alpha=0.5, levels=10, thresh=0.05)
     
     # Use a for loop to plot each event
     for idx in df.index:
-        # Only draw lines for events that have an end location (Passes and Carries)
+        # Only draw arrows for events that have an end location for Passes
         if pd.notnull(df.loc[idx, endX_col]):
             color = 'green' if df.loc[idx, 'outcome'] == 'Successful' else 'red'
-            plt.plot((df.loc[idx, x_col], df.loc[idx, endX_col]), 
-                     (df.loc[idx, y_col], df.loc[idx, endY_col]), 
-                     color=color, linewidth=1.5, alpha=0.6)
+            ax.annotate('', xy=(df.loc[idx, endX_col], df.loc[idx, endY_col]),
+                       xytext=(df.loc[idx, x_col], df.loc[idx, y_col]),
+                       arrowprops=dict(arrowstyle='->', color=color, lw=1.5, alpha=0.7))
         
         # Plot a scatter point for every touch
         #plt.scatter(df.loc[idx, x_col], df.loc[idx, y_col], color='white', s=10, alpha=0.5)
@@ -53,8 +52,8 @@ def load_player_events(player_name, match_id):
     player_events['y'] = player_events['location'].str[1]
 
 
-    player_events['endX'] = player_events['pass_end_location'].str[0].fillna(player_events['carry_end_location'].str[0])
-    player_events['endY'] = player_events['pass_end_location'].str[1].fillna(player_events['carry_end_location'].str[1])
+    player_events['endX'] = player_events['pass_end_location'].str[0]
+    player_events['endY'] = player_events['pass_end_location'].str[1]
     
     # Normalize outcomes for coloring
     player_events['outcome'] = 'Successful'
