@@ -4,10 +4,15 @@ import matplotlib.pyplot as plt
 from mplsoccer import Pitch
 from statsbombpy import sb
 
-def convert_to_heatmap(df, x_col, y_col, endX_col, endY_col, bins=(60, 40), cmap='Reds'):
-    fig, ax = plt.subplots(figsize=(13.5, 8))
+def convert_to_heatmap(df, x_col, y_col, endX_col, endY_col, bins=(60, 40), cmap='Reds', game_stats=None):
+    """Plot KDE heatmap with pass arrows and optional game stats side panel."""
+    fig, (ax, ax_stats) = plt.subplots(
+        1, 2, figsize=(16, 8), gridspec_kw={"width_ratios": [3, 1]}
+    )
     fig.set_facecolor('#22312b')
     ax.patch.set_facecolor('#22312b')
+    ax_stats.patch.set_facecolor('#22312b')
+    ax_stats.axis('off')
     
     pitch = Pitch(pitch_type='statsbomb', 
                   pitch_color = 'grass', line_color='#c7d5cc')
@@ -16,10 +21,10 @@ def convert_to_heatmap(df, x_col, y_col, endX_col, endY_col, bins=(60, 40), cmap
     y = df[y_col]
     
     pitch.draw(ax=ax)
-    plt.gca().invert_yaxis()
+    ax.invert_yaxis()
     
     # KDE plot heatmap based on all touch locations
-    sns.kdeplot(x=x, y=y, ax=ax, cmap=cmap, fill=True, alpha=0.5, levels=10, thresh=0.05)
+    sns.kdeplot(x=x, y=y, ax=ax, cmap=plt.cm.inferno, fill=True, alpha=0.5, levels=6, thresh=0.1)
     
     # Use a for loop to plot each event
     for idx in df.index:
@@ -29,16 +34,59 @@ def convert_to_heatmap(df, x_col, y_col, endX_col, endY_col, bins=(60, 40), cmap
             ax.annotate('', xy=(df.loc[idx, endX_col], df.loc[idx, endY_col]),
                        xytext=(df.loc[idx, x_col], df.loc[idx, y_col]),
                        arrowprops=dict(arrowstyle='->', color=color, lw=1.5, alpha=0.7))
-        
-        # Plot a scatter point for every touch
-        #plt.scatter(df.loc[idx, x_col], df.loc[idx, y_col], color='white', s=10, alpha=0.5)
+    
+    ax.set_xlim(0, 120)
+    ax.set_ylim(0, 90)
+    ax.set_title('Florian Wirtz Touch & Pass Map', color='white', size=20)
 
-    plt.xlim(0, 120)
-    plt.ylim(0, 80)
-    plt.title('Florian Wirtz Touch & Pass Map', color='white', size=20)
+    # Side panel: game stats if provided
+    if game_stats is not None and not game_stats.empty:
+        y0 = 0.9
+        dy = 0.12
+        ax_stats.text(0.05, y0, 'Game Stats', color='white', fontsize=14, weight='bold')
+        stats_order = ['rating', 'min', 'G', 'A', 'shots', 'drib', 'touches']
+        labels = {
+            'rating': 'Rating',
+            'min': 'Minutes Played',
+            'G': 'Goals',
+            'A': 'Assists',
+            'shots': 'Shots',
+            'drib': 'Dribbles',
+            'touches': 'Touches'
+        }
+        for i, key in enumerate(stats_order):
+            val = game_stats.get(key, '') or 0
+            if pd.isna(val):
+                val = 0
+            if key == 'rating':
+                val = str(val) + '/10'
+            ax_stats.text(0.05, y0 - (i + 1) * dy, f"{labels[key]}: {val}", color='white', fontsize=12)
+    else:
+        ax_stats.text(0.05, 0.5, 'Game stats not found.', color='white', fontsize=12)
+
+    plt.tight_layout()
     plt.show()
 
-def load_player_events(player_name, match_id):
+def load_game_stats(game_label, csv_path='game_stats.csv'):
+    """Load a single row of game stats by label (e.g., 'Augsburg (A)')."""
+    try:
+        stats_df = pd.read_csv(csv_path)
+    except FileNotFoundError:
+        return pd.Series()
+    row = stats_df[stats_df['game'] == game_label]
+    return row.squeeze() if not row.empty else pd.Series()
+
+
+def load_player_events(player_name, match_id, team_name="Bayer Leverkusen"):
+    # Try to resolve opponent and home/away from matches table for Bundesliga season 281
+    try:
+        matches = sb.matches(competition_id=9, season_id=281)
+        match_row = matches[matches['match_id'] == match_id].iloc[0]
+        is_home = match_row['home_team'] == team_name
+        opponent = match_row['away_team'] if is_home else match_row['home_team']
+        game_label = f"{opponent} ({'H' if is_home else 'A'})"
+    except Exception:
+        game_label = None
 
     events = sb.events(match_id=match_id)
 
@@ -51,7 +99,6 @@ def load_player_events(player_name, match_id):
     player_events['x'] = player_events['location'].str[0]
     player_events['y'] = player_events['location'].str[1]
 
-
     player_events['endX'] = player_events['pass_end_location'].str[0]
     player_events['endY'] = player_events['pass_end_location'].str[1]
     
@@ -62,7 +109,8 @@ def load_player_events(player_name, match_id):
     if 'carry_outcome' in player_events.columns:
         player_events.loc[player_events['carry_outcome'].notnull(), 'outcome'] = 'Unsuccessful'
 
-    convert_to_heatmap(player_events, 'x', 'y', 'endX', 'endY')
+    stats_row = load_game_stats(game_label) if game_label else pd.Series()
+    convert_to_heatmap(player_events, 'x', 'y', 'endX', 'endY', game_stats=stats_row)
 
 if __name__ == "__main__":
-    load_player_events(player_name="Florian Wirtz", match_id=3895182)
+    load_player_events(player_name="Florian Wirtz", match_id=3895348)

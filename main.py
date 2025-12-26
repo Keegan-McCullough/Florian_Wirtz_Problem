@@ -15,6 +15,6 @@ def calculate_statistics(df):
     return df
 
 if __name__ == "__main__":
-    df = load_data("Stats.csv")
+    df = load_data("base_stats.csv")
     df = calculate_statistics(df)
     print(df.head())
