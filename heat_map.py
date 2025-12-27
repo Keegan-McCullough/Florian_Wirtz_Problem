@@ -34,6 +34,12 @@ def convert_to_heatmap(df, x_col, y_col, endX_col, endY_col, bins=(60, 40), cmap
             ax.annotate('', xy=(df.loc[idx, endX_col], df.loc[idx, endY_col]),
                        xytext=(df.loc[idx, x_col], df.loc[idx, y_col]),
                        arrowprops=dict(arrowstyle='->', color=color, lw=1.5, alpha=0.7))
+    for idx in df.index:
+        if df.loc[idx, 'pass_goal_assist'] == 'True':
+            print(df.loc[idx])
+            ax.annotate('★', xy=(df.loc[idx, x_col], df.loc[idx, y_col]),
+                        xytext=(df.loc[idx, x_col] - 1, df.loc[idx, y_col] - 1),
+                        color='yellow', fontsize=15, weight='bold')
     
     ax.set_xlim(0, 120)
     ax.set_ylim(0, 90)
@@ -75,9 +81,14 @@ def load_game_stats(game_label, csv_path='game_stats.csv'):
         stats_df = pd.read_csv(csv_path)
     except FileNotFoundError:
         return pd.Series()
+    game_label = process_names(game_label)
     row = stats_df[stats_df['game'] == game_label]
     return row.squeeze() if not row.empty else pd.Series()
 
+def process_names(name):
+    if 'ö' in name:
+        name = name.replace('ö', 'o')
+    return name
 
 def load_player_events(player_name, match_id, team_name="Bayer Leverkusen"):
     # Try to resolve opponent and home/away from matches table for Bundesliga season 281
@@ -111,8 +122,12 @@ def load_player_events(player_name, match_id, team_name="Bayer Leverkusen"):
     if 'carry_outcome' in player_events.columns:
         player_events.loc[player_events['carry_outcome'].notnull(), 'outcome'] = 'Unsuccessful'
 
+    if 'pass_goal_assist' in player_events.columns:
+        player_events.loc[player_events['pass_goal_assist'].notnull(), 'pass_goal_assist'] = 'True'
+    
     stats_row = load_game_stats(game_label) if game_label else pd.Series()
     convert_to_heatmap(player_events, 'x', 'y', 'endX', 'endY', game_stats=stats_row)
 
 if __name__ == "__main__":
-    load_player_events(player_name="Florian Wirtz", match_id=3895302)
+    match_id = int(input("Enter Match ID: "))
+    load_player_events(player_name="Florian Wirtz", match_id=match_id)
