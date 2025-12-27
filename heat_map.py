@@ -55,11 +55,13 @@ def convert_to_heatmap(df, x_col, y_col, endX_col, endY_col, bins=(60, 40), cmap
             'touches': 'Touches'
         }
         for i, key in enumerate(stats_order):
-            val = game_stats.get(key, '') or 0
+            val = game_stats.get(key, '')
             if pd.isna(val):
                 val = 0
             if key == 'rating':
                 val = str(val) + '/10'
+            else:
+                val = int(val)
             ax_stats.text(0.05, y0 - (i + 1) * dy, f"{labels[key]}: {val}", color='white', fontsize=12)
     else:
         ax_stats.text(0.05, 0.5, 'Game stats not found.', color='white', fontsize=12)
@@ -113,4 +115,4 @@ def load_player_events(player_name, match_id, team_name="Bayer Leverkusen"):
     convert_to_heatmap(player_events, 'x', 'y', 'endX', 'endY', game_stats=stats_row)
 
 if __name__ == "__main__":
-    load_player_events(player_name="Florian Wirtz", match_id=3895348)
+    load_player_events(player_name="Florian Wirtz", match_id=3895302)
