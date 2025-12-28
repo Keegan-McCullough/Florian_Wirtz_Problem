@@ -26,7 +26,7 @@ def convert_to_heatmap(df, x_col, y_col, endX_col, endY_col, bins=(60, 40), cmap
     pitch.draw(ax=ax)
     
     # KDE plot heatmap based on all touch locations
-    sns.kdeplot(x=x, y=y, ax=ax, cmap=plt.cm.inferno, fill=True, alpha=0.5, levels=6, thresh=0.1)
+    sns.kdeplot(x=x, y=y, ax=ax, cmap=plt.cm.inferno,  bw_adjust=0.6, fill=True, alpha=0.65, levels=100, antialiased=True, thresh=0.2 )
     # Use a for loop to plot each event
     for idx in df.index:
         # Only draw arrows for events that have an end location for Passes
