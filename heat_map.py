@@ -3,6 +3,9 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from mplsoccer import Pitch
 from statsbombpy import sb
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+import matplotlib.image as mpimg
+
 
 def convert_to_heatmap(df, x_col, y_col, endX_col, endY_col, bins=(60, 40), cmap='Reds', game_stats=None):
     """Plot KDE heatmap with pass arrows and optional game stats side panel."""
@@ -21,11 +24,9 @@ def convert_to_heatmap(df, x_col, y_col, endX_col, endY_col, bins=(60, 40), cmap
     y = df[y_col]
     
     pitch.draw(ax=ax)
-    ax.invert_yaxis()
     
     # KDE plot heatmap based on all touch locations
     sns.kdeplot(x=x, y=y, ax=ax, cmap=plt.cm.inferno, fill=True, alpha=0.5, levels=6, thresh=0.1)
-    
     # Use a for loop to plot each event
     for idx in df.index:
         # Only draw arrows for events that have an end location for Passes
@@ -34,15 +35,22 @@ def convert_to_heatmap(df, x_col, y_col, endX_col, endY_col, bins=(60, 40), cmap
             ax.annotate('', xy=(df.loc[idx, endX_col], df.loc[idx, endY_col]),
                        xytext=(df.loc[idx, x_col], df.loc[idx, y_col]),
                        arrowprops=dict(arrowstyle='->', color=color, lw=1.5, alpha=0.7))
+            
     for idx in df.index:
         if df.loc[idx, 'pass_goal_assist'] == 'True':
-            print(df.loc[idx])
-            ax.annotate('★', xy=(df.loc[idx, x_col], df.loc[idx, y_col]),
-                        xytext=(df.loc[idx, x_col] - 1, df.loc[idx, y_col] - 1),
-                        color='yellow', fontsize=15, weight='bold')
-    
+            plot_icon(ax, 'icons/cleats.png',
+                      df.loc[idx, x_col], df.loc[idx, y_col], zoom=0.04)
+        elif df.loc[idx, 'type'] == 'Shot':
+            if df.loc[idx, 'shot_outcome'] == 'Goal':
+                plot_icon(ax, 'icons/soccer_ball.png',
+                      df.loc[idx, x_col], df.loc[idx, y_col], zoom=0.03)
+            else:
+                plot_icon(ax, 'icons/close.png',
+                      df.loc[idx, x_col], df.loc[idx, y_col], zoom=0.025)
+                
     ax.set_xlim(0, 120)
     ax.set_ylim(0, 90)
+    ax.invert_yaxis()
     ax.set_title('Florian Wirtz Touch & Pass Map', color='white', size=20)
 
     # Side panel: game stats if provided
@@ -90,6 +98,13 @@ def process_names(name):
         name = name.replace('ö', 'o')
     return name
 
+def plot_icon(ax,img_path, x, y, zoom=0.05):
+    img = mpimg.imread(img_path)
+    imagebox = OffsetImage(img, zoom=zoom)
+    ab = AnnotationBbox(imagebox, (x, y), frameon=False)
+    ax.add_artist(ab)
+
+
 def load_player_events(player_name, match_id, team_name="Bayer Leverkusen"):
     # Try to resolve opponent and home/away from matches table for Bundesliga season 281
     try:
@@ -125,6 +140,7 @@ def load_player_events(player_name, match_id, team_name="Bayer Leverkusen"):
     if 'pass_goal_assist' in player_events.columns:
         player_events.loc[player_events['pass_goal_assist'].notnull(), 'pass_goal_assist'] = 'True'
     
+    print(game_label)
     stats_row = load_game_stats(game_label) if game_label else pd.Series()
     convert_to_heatmap(player_events, 'x', 'y', 'endX', 'endY', game_stats=stats_row)
 
