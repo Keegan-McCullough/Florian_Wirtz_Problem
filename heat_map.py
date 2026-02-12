@@ -27,9 +27,8 @@ def convert_to_heatmap(df, x_col, y_col, endX_col, endY_col, bins=(60, 40), cmap
     
     # KDE plot heatmap based on all touch locations
     sns.kdeplot(x=x, y=y, ax=ax, cmap=plt.cm.inferno,  bw_adjust=0.6, fill=True, alpha=0.65, levels=100, antialiased=True, thresh=0.2 )
-    # Use a for loop to plot each event
+    
     for idx in df.index:
-        # Only draw arrows for events that have an end location for Passes
         if pd.notnull(df.loc[idx, endX_col]):
             color = 'green' if df.loc[idx, 'outcome'] == 'Successful' else 'red'
             ax.annotate('', xy=(df.loc[idx, endX_col], df.loc[idx, endY_col]),
@@ -53,7 +52,7 @@ def convert_to_heatmap(df, x_col, y_col, endX_col, endY_col, bins=(60, 40), cmap
     ax.invert_yaxis()
     ax.set_title('Florian Wirtz Touch & Pass Map', color='white', size=20)
 
-    # Side panel: game stats if provided
+    #game stats if provided
     if game_stats is not None and not game_stats.empty:
         y0 = 0.9
         dy = 0.12
@@ -106,7 +105,6 @@ def plot_icon(ax,img_path, x, y, zoom=0.05):
 
 
 def load_player_events(player_name, match_id, team_name="Bayer Leverkusen"):
-    # Try to resolve opponent and home/away from matches table for Bundesliga season 281
     try:
         matches = sb.matches(competition_id=9, season_id=281)
         match_row = matches[matches['match_id'] == match_id].iloc[0]
