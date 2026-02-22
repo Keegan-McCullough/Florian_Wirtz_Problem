@@ -20,6 +20,7 @@ def screen_capture(frame_queue, monitor_index=1, max_queue_size=10):
     while True:
         img = np.array(sct.grab(left_half))
         frame = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+        frame = cv2.convertScaleAbs(frame, alpha=1.2, beta=20)
 
         # Drop frame if queue is full
         if frame_queue.qsize() < max_queue_size:

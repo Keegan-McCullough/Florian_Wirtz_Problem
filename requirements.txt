@@ -1,0 +1,18 @@
+# Core ML and Tracking
+ultralytics
+openvino
+opencv-python
+
+# Data and Analytics
+numpy
+pandas
+seaborn
+matplotlib
+
+# Utilities
+mss        
+pyyaml
+
+# Soccer-specific
+statsbombpy
+mplsoccer

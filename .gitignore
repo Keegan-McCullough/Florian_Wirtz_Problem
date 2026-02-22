@@ -11,3 +11,9 @@ __pycache__/
 venv/
 env/
 .venv/
+
+# All model weights
+*.pt
+
+# All OpenVINO exports
+*_openvino_model/
