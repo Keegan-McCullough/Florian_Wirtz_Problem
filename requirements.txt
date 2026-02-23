@@ -1,3 +1,4 @@
+Cython
 # Core ML and Tracking
 ultralytics
 openvino
