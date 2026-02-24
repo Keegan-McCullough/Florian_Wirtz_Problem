@@ -1,4 +1,4 @@
-# fast_draw.pyx
+# PlayerTracker/fast_draw.pyx
 import numpy as np
 cimport numpy as np
 import cv2

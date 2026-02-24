@@ -1,3 +1,4 @@
+# PlayerTracker/video_processor.py
 from ultralytics import YOLO
 import cv2
 import numpy as np
@@ -26,13 +27,11 @@ def screen_capture(frame_queue, monitor_index=1, max_queue_size=10):
         if frame_queue.qsize() < max_queue_size:
             frame_queue.put(frame)
         else:
-            # Optional: skip frame
             pass
 
-        # Display capture (optional)
-        cv2.imshow("Recording", frame)
+        # Display capture optional
+        #cv2.imshow("Recording", frame)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
     cv2.destroyAllWindows()
-

@@ -1,45 +1,53 @@
+# PlayerTracker/tracker.py
 from ultralytics import YOLO
 import cv2
 import numpy as np
-from dotenv import load_dotenv
-import os
 from collections import defaultdict
-from fast_draw import draw_trails
+from setup import TrackingSetup
 
-def yolo_tracking(frame_queue):
-    yolo = YOLO("yolov8m.pt")
-    yolo.export(format="openvino")
-    ov_model = YOLO("yolov8m_openvino_model/")
-    track_history = defaultdict(lambda: [])
+
+def yolo_tracking(frame_queue, setup: TrackingSetup, ov_model):
+    track_history = defaultdict(list)
 
     while True:
-        if not frame_queue.empty():
-            frame = frame_queue.get()
+        if frame_queue.empty():
+            continue
 
-            results = ov_model.track(frame, imgsz=640, conf = 0.1, iou=0.5, persist=True, tracker="bytetrack.yaml", classes=[0], verbose=False)
+        frame = frame_queue.get()
+        results = ov_model.track(frame, imgsz=640, conf=0.01, iou=0.5,
+                                  persist=True, tracker="custom_botsort.yaml",
+                                  classes=[0], verbose=False)
 
-            if results and results[0].boxes.id is not None:
-                boxes = results[0].boxes.xywh.cpu()
-                track_ids = results[0].boxes.id.int().cpu().tolist()
 
-                draw_trails(frame, dict(track_history))
+        if results and results[0].boxes.id is not None:
+            boxes = results[0].boxes.xywh.cpu()
+            track_ids = results[0].boxes.id.int().cpu().tolist()
 
-                for box, track_id in zip(boxes, track_ids):
-                    x, y, w, h = box
-                    
-                    # Bounding box coordinates
-                    top_left = (int(x - w/2), int(y - h/2))
-                    bottom_right = (int(x + w/2), int(y + h/2))
-                    
-                    # These operations are GPU-accelerated if 'frame' is a cv2.UMat
-                    cv2.rectangle(frame, top_left, bottom_right, (0, 0, 255), 2)
-                    cv2.putText(frame, f"ID: {track_id}", (top_left[0], top_left[1]-10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            for box, track_id in zip(boxes, track_ids):
+                x, y, w, h = box
 
-            # Convert to UMat for GPU-accelerated display
-            frame_gpu = cv2.UMat(frame)
-            cv2.imshow("Soccer Player Tracking", frame_gpu)
-            if cv2.waitKey(1) & 0xFF == ord("q"):
-                break
+                if not setup.point_in_boundary(float(x), float(y)):
+                    continue
+                if setup.selected_ids and track_id not in setup.selected_ids:
+                    continue
+
+                track_history[track_id].append((float(x), float(y)))
+                if len(track_history[track_id]) > 60:
+                    track_history[track_id].pop(0)
+
+                tl = (int(x - w/2), int(y - h/2))
+                br = (int(x + w/2), int(y + h/2))
+                cv2.rectangle(frame, tl, br, (0, 0, 255), 2)
+                cv2.putText(frame, f"ID: {track_id}" , (tl[0], tl[1] - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+
+        if setup.boundary_complete:
+            pts = np.array(setup.boundary_points, np.int32)
+            cv2.polylines(frame, [pts], True, (0, 255, 255), 1)
+
+        cv2.imshow("Soccer Player Tracking", cv2.UMat(frame))
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
 
     cv2.destroyAllWindows()
