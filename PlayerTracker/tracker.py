@@ -32,7 +32,7 @@ def yolo_tracking(frame_queue, setup: TrackingSetup, ov_model):
                     continue
 
                 track_history[track_id].append((float(x), float(y)))
-                if len(track_history[track_id]) > 60:
+                if len(track_history[track_id]) > 90:
                     track_history[track_id].pop(0)
 
                 tl = (int(x - w/2), int(y - h/2))

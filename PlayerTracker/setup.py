@@ -44,7 +44,7 @@ class TrackingSetup:
 
         return display
 
-    def mouse_callback(self, event, x, y, flags, param):
+    def mouse_callback(self, event, x, y, frame, flags):
         if event == cv2.EVENT_LBUTTONDOWN:
             if not self.boundary_complete:
                 self.boundary_points.append((x, y))
@@ -59,6 +59,7 @@ class TrackingSetup:
                             self.selected_ids.discard(track_id)
                         else:
                             self.selected_ids.add(track_id)
+                self.draw_ui(frame)
 
         elif event == cv2.EVENT_RBUTTONDOWN:
             # Close the boundary
@@ -78,7 +79,7 @@ def run_setup(frame_queue, ov_model) -> TrackingSetup:
     #Returns a configured TrackingSetup when the user hits ENTER.
     setup = TrackingSetup()
     cv2.namedWindow("Setup")
-    cv2.setMouseCallback("Setup", setup.mouse_callback)
+    cv2.setMouseCallback("Setup", setup.mouse_callback, frame_queue.get())
 
     while not setup.setup_complete:
         if frame_queue.empty():
@@ -87,7 +88,7 @@ def run_setup(frame_queue, ov_model) -> TrackingSetup:
         frame = frame_queue.get()
 
         # Run detection during setup so user can see and select IDs
-        results = ov_model.track(frame, imgsz=640, conf=0.3, iou=0.5,
+        results = ov_model.track(frame, imgsz=640, conf=0.1, iou=0.5,
                                   persist=True, tracker="custom_botsort.yaml",
                                   classes=[0], verbose=False)
 

@@ -9,7 +9,7 @@ from ultralytics import YOLO
 if __name__ == "__main__":
     frame_queue = Queue(maxsize=10)
     
-    ov_model = YOLO("yolov8m_openvino_model/")
+    ov_model = YOLO("best_openvino_model")
 
     # Start capture thread so setup has live frames to work with
     capture_thread = threading.Thread(target=screen_capture, args=(frame_queue,), daemon=True)
