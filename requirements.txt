@@ -1,0 +1,25 @@
+Cython
+
+# Core ML and Tracking
+ultralytics
+openvino
+opencv-python
+
+# Analytics tools
+numpy
+pandas
+seaborn
+matplotlib
+
+# Utilities
+mss        
+pyyaml
+
+# Datasets
+statsbombpy
+mplsoccer
+SoccerNet
+kagglehub
+
+# Environment management
+ipykernel

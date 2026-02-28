@@ -1,0 +1,7 @@
+names:
+  0: player
+  1: referee
+  2: ball
+path: C:\Users\keega\.cache\kagglehub\datasets\hamzaboulahia\football-players-detection-dataset\versions\1
+train: C:\Users\keega\.cache\kagglehub\datasets\hamzaboulahia\football-players-detection-dataset\versions\1\players\images\train
+val: C:\Users\keega\.cache\kagglehub\datasets\hamzaboulahia\football-players-detection-dataset\versions\1\players\images\val
