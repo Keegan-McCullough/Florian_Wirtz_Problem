@@ -12,8 +12,12 @@ venv/
 env/
 .venv/
 
-# All model weights
+# All model information
 *.pt
+runs/
 
 # All OpenVINO exports
 *_openvino_model/
+
+# Unimportant related files
+england_epl/
