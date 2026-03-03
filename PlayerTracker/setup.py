@@ -88,7 +88,7 @@ def run_setup(frame_queue, ov_model) -> TrackingSetup:
         frame = frame_queue.get()
 
         # Run detection during setup so user can see and select IDs
-        results = ov_model.track(frame, imgsz=640, conf=0.1, iou=0.5,
+        results = ov_model.track(frame, imgsz=640, conf=0.5, iou=0.1,
                                   persist=True, tracker="custom_botsort.yaml",
                                   classes=[0], verbose=False)
 

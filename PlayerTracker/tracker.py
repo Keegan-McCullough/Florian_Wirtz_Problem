@@ -14,7 +14,7 @@ def yolo_tracking(frame_queue, setup: TrackingSetup, ov_model):
             continue
 
         frame = frame_queue.get()
-        results = ov_model.track(frame, imgsz=640, conf=0.01, iou=0.5,
+        results = ov_model.track(frame, imgsz=640, conf=0.5, iou=0.8,
                                   persist=True, tracker="custom_botsort.yaml",
                                   classes=[0], verbose=False)
 
@@ -38,7 +38,7 @@ def yolo_tracking(frame_queue, setup: TrackingSetup, ov_model):
                 tl = (int(x - w/2), int(y - h/2))
                 br = (int(x + w/2), int(y + h/2))
                 cv2.rectangle(frame, tl, br, (0, 0, 255), 2)
-                cv2.putText(frame, f"ID: {track_id}" , (tl[0], tl[1] - 10),
+                cv2.putText(frame, f"ID: {track_id} Conf: {results[0].boxes.conf[track_ids.index(track_id)]:.2f}" , (tl[0], tl[1] - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
 
