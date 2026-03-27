@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 from collections import defaultdict
 
+from redis_store import RedisTrackerStore
+
 class TrackingSetup:
     def __init__(self):
         self.boundary_points = []
@@ -74,7 +76,7 @@ class TrackingSetup:
         return cv2.pointPolygonTest(pts, (float(x), float(y)), False) >= 0
 
 
-def run_setup(frame_queue, ov_model) -> TrackingSetup:
+def run_setup(frame_queue, ov_model, redis_store: RedisTrackerStore | None = None) -> TrackingSetup:
     
     #Returns a configured TrackingSetup when the user hits ENTER.
     setup = TrackingSetup()
@@ -105,10 +107,22 @@ def run_setup(frame_queue, ov_model) -> TrackingSetup:
         key = cv2.waitKey(1) & 0xFF
         if key == 13:  # ENTER — confirm
             setup.setup_complete = True
+            if redis_store:
+                redis_store.save_setup(
+                    selected_ids=setup.selected_ids,
+                    boundary_points=setup.boundary_points,
+                    boundary_complete=setup.boundary_complete,
+                )
         elif key == ord("r"):  # Reset
             setup.boundary_points = []
             setup.boundary_complete = False
             setup.selected_ids = set()
+            if redis_store:
+                redis_store.save_setup(
+                    selected_ids=setup.selected_ids,
+                    boundary_points=setup.boundary_points,
+                    boundary_complete=setup.boundary_complete,
+                )
 
     cv2.destroyWindow("Setup")
     return setup
