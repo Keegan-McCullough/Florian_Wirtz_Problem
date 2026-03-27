@@ -12,16 +12,16 @@ def screen_capture(frame_queue, monitor_index=1, max_queue_size=10):
 
     # want only the left side right now
     left_half = {
-        "top": monitor["top"],
+        "top": monitor["top"] + 50,
         "left": monitor["left"], 
         "width": monitor["width"] // 2,
-        "height": monitor["height"]
+        "height": monitor["height"] - 200
     }
 
     while True:
         img = np.array(sct.grab(left_half))
         frame = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-        frame = cv2.convertScaleAbs(frame, alpha=1.2, beta=20)
+        frame = cv2.convertScaleAbs(frame, alpha=1.2)
 
         # Drop frame if queue is full
         if frame_queue.qsize() < max_queue_size:
