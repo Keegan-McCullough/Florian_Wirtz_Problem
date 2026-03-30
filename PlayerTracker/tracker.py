@@ -21,6 +21,7 @@ def yolo_tracking(frame_queue, setup: TrackingSetup, ov_model, redis_store: Redi
             track_ids = results[0].boxes.id.int().cpu().tolist()
             confidences = results[0].boxes.conf.cpu().tolist()
 
+
             # Get selected IDs once per frame for efficiency
             redis_selected_ids = redis_store.get_selected_ids() if redis_store else None
             active_selected_ids = redis_selected_ids if redis_selected_ids is not None else setup.selected_ids
@@ -30,6 +31,7 @@ def yolo_tracking(frame_queue, setup: TrackingSetup, ov_model, redis_store: Redi
 
                 if not setup.point_in_boundary(float(x), float(y)):
                     continue
+                
                 if active_selected_ids and track_id not in active_selected_ids:
                     continue
                 
@@ -50,11 +52,12 @@ def yolo_tracking(frame_queue, setup: TrackingSetup, ov_model, redis_store: Redi
                 if redis_store:
                     redis_store.update_player_data(track_id=perm_id, x=float(x), y=float(y), conf=float(conf))
 
+                
                 # Simple bounding box visualization
                 tl = (int(x - w/2), int(y - h/2))
                 br = (int(x + w/2), int(y + h/2))
                 cv2.rectangle(frame, tl, br, (0, 0, 255), 2)
-                cv2.putText(frame, f"ID: {perm_id}" , (tl[0], tl[1] - 10),
+                cv2.putText(frame, f"ID: {track_id}" , (tl[0], tl[1] - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
         if setup.boundary_complete:

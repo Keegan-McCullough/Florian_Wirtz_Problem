@@ -18,7 +18,9 @@ def screen_capture(frame_queue, monitor_index=1, max_queue_size=10):
         "height": monitor["height"] - 200
     }
 
+    count = 0
     while True:
+        count += 1
         img = np.array(sct.grab(left_half))
         frame = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
         frame = cv2.convertScaleAbs(frame, alpha=1.2)

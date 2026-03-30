@@ -4,6 +4,7 @@ Cython
 ultralytics
 openvino
 opencv-python
+wandb
 
 # Analytics tools
 numpy

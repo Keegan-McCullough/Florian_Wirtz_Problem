@@ -102,7 +102,7 @@ class RedisTrackerStore:
             time_diff = current_ts - data['ts']
             
             # Score Formula: Distance divided by time (or a weighted sum)
-            # We want high time_diff and low dist to result in a low score
+            # We want low time_diff and low dist to result in a low score
             # If they've been gone a long time, the 'penalty' for distance decreases
             score = dist + time_diff
             
