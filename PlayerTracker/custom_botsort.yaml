@@ -6,7 +6,10 @@ new_track_thresh: 0.5
 track_buffer: 180
 match_thresh: 0.7
 fuse_score: True
-with_reid: False
+with_reid: True
+model: "auto"
+#embed_model: "models/osnet_x0_25_msmt17.onnx"
+reid_model: "models/osnet_x0_25_msmt17.onnx"
 gmc_method: sparseOptFlow
 proximity_thresh: 0.5
 appearance_thresh: 0.25
