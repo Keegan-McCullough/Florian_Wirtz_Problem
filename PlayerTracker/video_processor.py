@@ -6,7 +6,7 @@ from collections import defaultdict
 from mss import mss
 
 
-def screen_capture(frame_queue, monitor_index=1, max_queue_size=10):
+def screen_capture(frame_queue, monitor_index=1, max_queue_size=15):
     sct = mss()
     monitor = sct.monitors[monitor_index]
 
@@ -18,13 +18,15 @@ def screen_capture(frame_queue, monitor_index=1, max_queue_size=10):
         "height": monitor["height"] - 200
     }
 
+    count = 0
     while True:
+        count += 1
         img = np.array(sct.grab(left_half))
         frame = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-        frame = cv2.convertScaleAbs(frame, alpha=1.2)
+        frame = cv2.convertScaleAbs(frame, alpha=1.0)
 
         # Drop frame if queue is full
-        if frame_queue.qsize() < max_queue_size:
+        if frame_queue.qsize() < max_queue_size and count % 2 == 0:
             frame_queue.put(frame)
         else:
             pass

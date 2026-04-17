@@ -5,6 +5,7 @@ import time
 from typing import Iterable, Optional
 import redis
 import math
+import numpy as np
 
 class RedisTrackerStore:
     def __init__(self, redis_url: Optional[str] = None, key_prefix: str = "player_tracker"):
@@ -102,9 +103,9 @@ class RedisTrackerStore:
             time_diff = current_ts - data['ts']
             
             # Score Formula: Distance divided by time (or a weighted sum)
-            # We want high time_diff and low dist to result in a low score
+            # We want low time_diff and low dist to result in a low score
             # If they've been gone a long time, the 'penalty' for distance decreases
-            score = dist + time_diff
+            score = (.7 * dist) + (.3 * (time_diff/3))
             
             if score < min_score:
                 min_score = score
@@ -120,3 +121,49 @@ class RedisTrackerStore:
             if keys:
                 self.client.delete(*keys)
             if cursor == 0: break
+
+    def store_embedding(self, perm_id: int, embedding: np.ndarray) -> None:
+        if not self.enabled:
+            return
+
+        # Ensure embedding is a list for JSON serialization
+        if isinstance(embedding, np.ndarray):
+            embedding = embedding.tolist()
+
+        try:
+            # We store this in a hash where the key is the permanent player ID
+            self.client.hset(self._key("player_embeddings"), str(perm_id), json.dumps(embedding))
+        except redis.RedisError:
+            self.enabled = False
+
+    def find_match_by_embedding(self, current_embedding: np.ndarray, threshold: float = 0.75) -> Optional[int]:
+        if not self.enabled:
+            return None
+
+        try:
+            all_embeddings = self.client.hgetall(self._key("player_embeddings"))
+            if not all_embeddings:
+                return None
+
+            best_match_id = None
+            max_similarity = -1.0
+
+            # Normalize the current embedding once for Cosine Similarity calculation
+            norm_current = current_embedding / np.linalg.norm(current_embedding)
+
+            for perm_id, stored_raw in all_embeddings.items():
+                stored_vec = np.array(json.loads(stored_raw))
+                
+                # Calculate Cosine Similarity
+                norm_stored = stored_vec / np.linalg.norm(stored_vec)
+                similarity = np.dot(norm_current, norm_stored)
+
+                if similarity > max_similarity:
+                    max_similarity = similarity
+                    best_match_id = int(perm_id)
+
+            return best_match_id if max_similarity >= threshold else None
+
+        except (redis.RedisError, ValueError, TypeError):
+            self.enabled = False
+            return None

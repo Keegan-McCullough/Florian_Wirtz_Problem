@@ -4,6 +4,7 @@ Cython
 ultralytics
 openvino
 opencv-python
+wandb
 
 # Analytics tools
 numpy
@@ -15,6 +16,7 @@ matplotlib
 mss        
 pyyaml
 redis
+onnxruntime
 
 # Datasets
 statsbombpy

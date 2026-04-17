@@ -6,6 +6,8 @@ from tracker import yolo_tracking
 from setup import run_setup
 from redis_store import RedisTrackerStore
 from ultralytics import YOLO
+import wandb
+import os
 
 if __name__ == "__main__":
     frame_queue = Queue(maxsize=15)
@@ -13,7 +15,19 @@ if __name__ == "__main__":
     redis_store = RedisTrackerStore()
     redis_store.clear_project_cache()
 
-    ov_model = YOLO("best_openvino_model", task="detect")
+    # Uncomment to load in a new model and change version
+    #run = wandb.init()
+    #artifact = run.use_artifact('florian_wirtz_problem/florian-wirtz-problem/wirtz-tracking-model:v0', type='model')
+    #artifact_dir = artifact.download()
+
+    # The artifact folder will contain both the .pt and the openvino_version
+    if os.name == "nt":
+        model_path = os.path.join("artifacts", "wirtz-tracking-model-v0", "best_openvino_model")
+    else:
+        model_path = os.path.join("artifacts", "wirtz-tracking-model-v0", "soccer_model.pt")
+    ov_model = YOLO(model_path, task="detect")
+    
+    #ov_model = YOLO("best_openvino_model", task="detect")
 
     # Start capture thread so setup has live frames to work with
     capture_thread = threading.Thread(target=screen_capture, args=(frame_queue,), daemon=True)
