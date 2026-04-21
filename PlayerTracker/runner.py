@@ -8,9 +8,10 @@ from redis_store import RedisTrackerStore
 from ultralytics import YOLO
 import wandb
 import os
+import redis
 
 if __name__ == "__main__":
-    frame_queue = Queue(maxsize=15)
+    frame_queue = redis.Redis(host="localhost", port=6380, password="Liverpool2020!",)
 
     redis_store = RedisTrackerStore()
     redis_store.clear_project_cache()

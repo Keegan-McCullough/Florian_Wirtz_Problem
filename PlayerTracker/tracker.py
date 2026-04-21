@@ -3,15 +3,19 @@ import cv2
 import numpy as np
 from setup import TrackingSetup
 from redis_store import RedisTrackerStore
+import pickle
+import os
 
 def yolo_tracking(frame_queue, setup: TrackingSetup, ov_model, redis_store: RedisTrackerStore | None = None):
     local_id_map = {}
+    last_frame_id = -1
     
     while True:
-        if frame_queue.empty():
+        frame, new_id = TrackingSetup.fetch_latest_frame(frame_queue, last_frame_id)
+        if not frame:
             continue
 
-        frame = frame_queue.get()
+        last_frame_id = new_id
         results = ov_model.track(frame, imgsz=640, conf=0.5, iou=0.5,
                                   persist=True, tracker="custom_botsort.yaml",
                                   classes=[0], verbose=False)
@@ -76,7 +80,9 @@ def yolo_tracking(frame_queue, setup: TrackingSetup, ov_model, redis_store: Redi
             pts = np.array(setup.boundary_points, np.int32)
             cv2.polylines(frame, [pts], True, (0, 255, 255), 1)
 
-        cv2.imshow("Soccer Player Tracking", cv2.UMat(frame))
+        if os.name == "nt":
+            cv2.imshow("Soccer Player Tracking", cv2.UMat(frame))
+
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 

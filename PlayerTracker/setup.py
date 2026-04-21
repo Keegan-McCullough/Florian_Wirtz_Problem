@@ -1,8 +1,9 @@
 # PlayerTracker/setup.py
 import cv2
 import numpy as np
+import time
+import pickle
 from collections import defaultdict
-
 from redis_store import RedisTrackerStore
 
 class TrackingSetup:
@@ -75,21 +76,46 @@ class TrackingSetup:
         pts = np.array(self.boundary_points, np.int32)
         return cv2.pointPolygonTest(pts, (float(x), float(y)), False) >= 0
 
+def fetch_latest_frame(frame_queue, last_id):
+    """Helper to pull the latest frame from Redis"""
+    latest_id_bytes = frame_queue.get("latest_frame_id")
+    if not latest_id_bytes:
+        return None, last_id
+    
+    latest_id = int(latest_id_bytes.decode('utf-8'))
+    if latest_id == last_id:
+        return None, last_id
+        
+    data = frame_queue.get(f"frame:{latest_id}")
+    if data:
+        return pickle.loads(data), latest_id
+    return None, last_id
+
 
 def run_setup(frame_queue, ov_model, redis_store: RedisTrackerStore | None = None) -> TrackingSetup:
-    
-    #Returns a configured TrackingSetup when the user hits ENTER.
     setup = TrackingSetup()
     cv2.namedWindow("Setup")
-    cv2.setMouseCallback("Setup", setup.mouse_callback, frame_queue.get())
+    
+    last_frame_id = -1
+    frame = None
+    
+    # Wait for the first frame to bind the mouse callback properly
+    while frame is None:
+        frame, last_frame_id = fetch_latest_frame(frame_queue, last_frame_id)
+        if frame is None:
+            time.sleep(0.1)
+            
+    cv2.setMouseCallback("Setup", setup.mouse_callback, frame)
 
     while not setup.setup_complete:
-        if frame_queue.empty():
+        frame, new_id = fetch_latest_frame(frame_queue, last_frame_id)
+        
+        if frame is None:
             continue
+            
+        last_frame_id = new_id
 
-        frame = frame_queue.get()
-
-        # Run detection during setup so user can see and select IDs
+        # Run detection during setup
         results = ov_model.track(frame, imgsz=640, conf=0.5, iou=0.5,
                                   persist=True, tracker="custom_botsort.yaml",
                                   classes=[0], verbose=False)
@@ -105,7 +131,7 @@ def run_setup(frame_queue, ov_model, redis_store: RedisTrackerStore | None = Non
         cv2.imshow("Setup", display)
 
         key = cv2.waitKey(1) & 0xFF
-        if key == 13:  # ENTER — confirm
+        if key == 13:  # ENTER
             setup.setup_complete = True
             if redis_store:
                 redis_store.save_setup(
