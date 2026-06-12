@@ -17,7 +17,6 @@ mss
 pyyaml
 redis
 onnxruntime
-pickle
 
 # Datasets
 statsbombpy

@@ -3,19 +3,15 @@ import cv2
 import numpy as np
 from setup import TrackingSetup
 from redis_store import RedisTrackerStore
-import pickle
-import os
 
 def yolo_tracking(frame_queue, setup: TrackingSetup, ov_model, redis_store: RedisTrackerStore | None = None):
     local_id_map = {}
-    last_frame_id = -1
     
     while True:
-        frame, new_id = TrackingSetup.fetch_latest_frame(frame_queue, last_frame_id)
-        if not frame:
+        if frame_queue.empty():
             continue
 
-        last_frame_id = new_id
+        frame = frame_queue.get()
         results = ov_model.track(frame, imgsz=640, conf=0.5, iou=0.5,
                                   persist=True, tracker="custom_botsort.yaml",
                                   classes=[0], verbose=False)
@@ -60,8 +56,7 @@ def yolo_tracking(frame_queue, setup: TrackingSetup, ov_model, redis_store: Redi
                         redis_store.store_embedding(perm_id, embedding)
                     else:
                         # Fallback if Redis is down or embedding fails
-                        perm_id = redis_store.find_available_slot(x, y, 22)
-
+                        perm_id = redis_store.find_available_slot(x, y, 22) if redis_store else track_id
                     # Link the YOLO track_id to our Permanent ID for this session
                     local_id_map[track_id] = perm_id
                     if redis_store:
@@ -80,9 +75,7 @@ def yolo_tracking(frame_queue, setup: TrackingSetup, ov_model, redis_store: Redi
             pts = np.array(setup.boundary_points, np.int32)
             cv2.polylines(frame, [pts], True, (0, 255, 255), 1)
 
-        if os.name == "nt":
-            cv2.imshow("Soccer Player Tracking", cv2.UMat(frame))
-
+        cv2.imshow("Soccer Player Tracking", cv2.UMat(frame))
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 

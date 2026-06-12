@@ -9,7 +9,7 @@ import numpy as np
 
 class RedisTrackerStore:
     def __init__(self, redis_url: Optional[str] = None, key_prefix: str = "player_tracker"):
-        self.redis_url = redis_url or os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        self.redis_url = redis_url or os.getenv("REDIS_URL", "redis://localhost:6380/0")
         self.key_prefix = key_prefix
         self.enabled = True
 

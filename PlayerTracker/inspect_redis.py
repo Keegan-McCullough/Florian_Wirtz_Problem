@@ -85,7 +85,7 @@ def read_key(client: redis.Redis, key: str, parse_json: bool) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Inspect Redis keys and values for PlayerTracker.")
-    parser.add_argument("--redis-url", default=os.getenv("REDIS_URL", "redis://localhost:6379/0"))
+    parser.add_argument("--redis-url", default=os.getenv("REDIS_URL", "redis://localhost:6380/0"))
     parser.add_argument("--pattern", default="player_tracker:latest_positions")
     parser.add_argument("--limit", type=int, default=200)
     parser.add_argument("--no-json-parse", action="store_true", help="Do not parse JSON strings")
